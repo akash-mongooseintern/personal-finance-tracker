@@ -1,47 +1,88 @@
+<!-- <p align="center">
+  <a href="#" target="_blank"><img src="#" width="200" alt="logo" /></a>
+</p> -->
+
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
+  <a href="#" target="_blank">NestJS App</a> built using Nest framework with Typescript & Postgres database.
 </p>
-
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+To be specified.
 
 ## Installation
 
+_Note: Skip this section for docker based production deployment_
+
 ```bash
+# install dependencies
 $ npm install
 ```
 
-## Running the app
+## Setup
+
+Copy the contents of example.env to create .env in the root and update env variables to set server configuration to run.
+
+First you need to run and initialize databases.
+
+> For non docker environment
+
+`DATABASE_URL`, `REDIS_URI` in .env will be use to connect with databases, Please make sure you have correct connection uri here.
 
 ```bash
 # development
-$ npm run start
+$ npm run db:init
 
-# watch mode
+# production
+$ npm run db:migrate:deploy
+$ npm run db:seed
+```
+
+> For docker environment
+
+_Note: If you already have running required database containers then you can follow same setup as mentioned above for non docker environment._
+
+`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`, `REDIS_PORT`, `REDIS_PASSWORD` will be use to create database containers with authentication credential from .env, So make sure `DATABASE_URL` and `REDIS_URI` have exact same user, password and port for connection.
+
+To run production database containers you need to set `POSTGRES_DATA_VOLUME` and `REDIS_DATA_VOLUME` value to be set in .env file to mount the volume into host machine.
+
+```bash
+# development
+$ npm run dev:db
+$ npm run db:init
+
+# production
+$ npm run prod:db
+$ npm run db:migrate:deploy
+$ npm run db:seed
+```
+
+For convenience to switch between docker environment to local environment & testing, Please create host entry in your machine with following:-
+
+```
+127.0.0.1 postgres
+127.0.0.1 redis
+```
+
+## Run the server in docker container
+
+```bash
+# development
+$ npm run dev
+$ npm run dev:stop # To shut down containers
+
+# production
+$ npm run prod
+$ npm run prod:stop # To shut down containers
+```
+
+## Run the server in local machine
+
+```bash
+# development
 $ npm run start:dev
 
-# production mode
+# production
 $ npm run start:prod
 ```
 
@@ -58,16 +99,52 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Support
+## Migrate/Sync Database Schema
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+# initialize database - push schema, add constraints & seed database
+$ npm run db:init
 
-## Stay in touch
+# preview schema
+$ npm run db:studio
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# seed database
+$ npm run db:seed
 
-## License
+# seed specific seed file into the database
+$ npm run db:seed:only <name> # i.e. `npm run db:seed:only admin` to run prisma/seeds/admin.seed.ts
 
-Nest is [MIT licensed](LICENSE).
+# add constraints in schema (Note: Not required, If not using `db:schema:push` on staging or production env)
+$ npm run db:schema:constraints
+
+# add constraints for the specific table
+$ npm run db:schema:constraints:only <table name> # i.e. `npm run db:schema:constraints:only user` to add constraints into the user table
+
+# generate client with schema
+$ npm run db:client:generate
+
+# push schema changes to the database without migration
+$ npm run db:schema:push
+
+# generate migration for new changes
+$ npm run db:migration:create
+
+# generate migration for new changes & deploy
+$ npm run db:migrate:dev
+
+# reset database
+$ npm run db:migrate:reset
+
+# deploy all migrations
+$ npm run db:migrate:deploy
+```
+
+## API Documentation
+
+```bash
+# development
+http://localhost:{PORT}/api-spec
+
+# production
+{API_URL}/api-spec
+```
