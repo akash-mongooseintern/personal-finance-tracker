@@ -36,6 +36,15 @@ export class AccountsService {
         })
     }
 
+    async findUniqueAccountByUserAndAccountId(accountId: number, userId: string): Promise<Accounts | null> {
+        return await this.prismaService.accounts.findUnique({
+            where: {
+                id: accountId,
+                userId
+            }
+        })
+    }
+
     async createAccount(createAccountDto: CreateAccountDto, userId: string): Promise<Accounts> {
         const data = {
             ...createAccountDto,

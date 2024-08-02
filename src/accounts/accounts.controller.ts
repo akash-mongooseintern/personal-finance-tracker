@@ -5,6 +5,7 @@ import { ApiBearerAuth, ApiOkResponse, ApiTags } from "@nestjs/swagger";
 import { CreateAccountDto } from "./dto/create-account.dto";
 import { Accounts } from "@prisma/client";
 import { UpdateAccountsDto } from "./dto/update-account.dto";
+import { SuccessResponseDto } from "src/common/dto/success-response.dto";
 
 
 @ApiTags('Account')
@@ -18,16 +19,28 @@ export class AccountsController extends BaseController {
         super()
     }
 
-    @Get('me')
+    @Get()
     @ApiOkResponse({
-        type: Promise<Accounts[]>
+        type: Promise<SuccessResponseDto<Accounts[]>>
     })
-    async getMyAccounts(@Req() req: AuthenticatedRequest): Promise<Accounts[]> {
+    async getMyAccounts(@Req() req: AuthenticatedRequest): Promise<SuccessResponseDto<Accounts[]>> {
         const ctx = this.getContext(req)
-        return this.accountsService.findAccountsByUserId(ctx.user.id)
+        return new SuccessResponseDto(await this.accountsService.findAccountsByUserId(ctx.user.id))
+    }
+    
+    @Get(':account_id')
+    @ApiOkResponse({
+        type: Promise<SuccessResponseDto<Accounts[]>>
+    })
+    async getMyAccountById(
+        @Req() req: AuthenticatedRequest,
+        @Param('account_id',ParseIntPipe) accountId: number
+    ): Promise<SuccessResponseDto<Accounts | null>> {
+        const ctx = this.getContext(req)
+        return new SuccessResponseDto(await this.accountsService.findUniqueAccountByUserAndAccountId(accountId, ctx.user.id))
     }
 
-    @Post('me')
+    @Post()
     @ApiOkResponse({
         type: Promise<Accounts>
     })
@@ -41,7 +54,7 @@ export class AccountsController extends BaseController {
             return await this.accountsService.createAccount(createAccountDto, ctx.user.id)
     }
 
-    @Put('me/:account_id')
+    @Put(':account_id')
     async updatePartialAccount(
         @Req() req: AuthenticatedRequest,
         @Param('account_id', ParseIntPipe) accountId: number,
@@ -55,7 +68,7 @@ export class AccountsController extends BaseController {
         }
     }
 
-    @Delete('me/:account_id')
+    @Delete(':account_id')
     async deleteAccount(
         @Req() req: AuthenticatedRequest,
         @Param('account_id', ParseIntPipe) accountId: number
