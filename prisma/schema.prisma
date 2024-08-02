@@ -62,6 +62,8 @@ model User {
   updatedAt    DateTime      @updatedAt @map("updated_at")
   meta         UserMeta?
   settings     UserSetting[]
+  accounts     Accounts[]
+  transactions Transaction[]
 
   @@map("user")
 }
@@ -161,4 +163,65 @@ model SystemSetting {
 
   @@id([settingId])
   @@map("system_setting")
+}
+
+enum AccountType {
+  Bank         @map("bank")
+  FixedDeposit @map("fixed_deposit")
+
+  @@map("account_type")
+}
+
+model Accounts {
+  id                Int           @id @default(autoincrement())
+  name              String
+  amount            Decimal       @db.Decimal(12, 2)
+  type              AccountType
+  accountNumber     String        @map("account_number")
+  bankName          String        @map("bank_name")
+  user              User          @relation(fields: [userId], references: [id])
+  userId            String        @map("user_id") @db.Uuid
+  creditTransaction Transaction[] @relation("CreditTransactions")
+  debitTransaction  Transaction[] @relation("DebitTransactions")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt
+
+  @@unique([accountNumber, bankName])
+  @@map("account")
+}
+
+enum TransactionType {
+  Credit @map("credit")
+  Debit  @map("debit")
+
+  @@map("transaction_type")
+}
+
+enum TransactionCategory {
+  Income        @map("income")
+  Food          @map("food")
+  Entertainment @map("entertainment")
+  Transport     @map("transport")
+  Healthcare    @map("healthcare")
+  Shopping      @map("shopping")
+  Travel        @map("travel")
+  Other         @map("other")
+
+  @@map("transaction_category")
+}
+
+model Transaction {
+  id                 Int                 @id @default(autoincrement())
+  amount             Decimal             @db.Decimal(12, 2)
+  type               TransactionType
+  category           TransactionCategory
+  creditTo           Accounts?           @relation("CreditTransactions", fields: [creditToAccountId], references: [id])
+  creditToAccountId  Int?                @map("credit_to")
+  debitTo            Accounts?           @relation("DebitTransactions", fields: [debitFromAccountId], references: [id])
+  debitFromAccountId Int?                @map("debit_from")
+  txnDate            DateTime            @default(now()) @map("transaction_date")
+  user               User                @relation(fields: [userId], references: [id])
+  userId             String              @map("user_id") @db.Uuid
+
+  @@map("transaction")
 }

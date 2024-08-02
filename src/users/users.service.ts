@@ -559,7 +559,6 @@ export class UsersService {
         }
       }
     }
-
     const totalUsers = await this.prisma.user.count({
       where,
     });

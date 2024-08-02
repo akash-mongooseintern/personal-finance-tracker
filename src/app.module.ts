@@ -10,6 +10,8 @@ import { AppCacheInterceptor } from './app-cache.interceptor';
 import { PrismaModule } from './prisma';
 import { AuthModule } from './auth';
 import { RedisModule } from './redis';
+import { AccountsModule } from './accounts';
+import { TransactionModule } from './transactions/transactions.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { RedisModule } from './redis';
     PrismaModule,
     RedisModule,
     AuthModule,
+    AccountsModule,
+    TransactionModule
   ],
   controllers: [AppController],
   providers: [

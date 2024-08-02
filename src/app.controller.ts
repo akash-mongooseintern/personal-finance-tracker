@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   ParseFilePipeBuilder,
   Post,
   UploadedFile,
