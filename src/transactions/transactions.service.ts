@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma";
 import { CreateTransactionsDto } from "./dto/create-transaction.dto";
 import { Transaction, TransactionCategory, TransactionType } from "@prisma/client";
@@ -156,7 +156,7 @@ export class TransactionsService {
                 }
             })
 
-            if (!transaction) throw new BadRequestException('Transaction not found!')
+            if (!transaction) throw new NotFoundException('Transaction not found!')
 
             const isTypeCredit = transaction.type === 'Credit'
             const accId = isTypeCredit ? transaction.creditToAccountId as number : transaction.debitFromAccountId as number
@@ -231,7 +231,7 @@ export class TransactionsService {
                 }
             })
             if (!transaction) {
-                throw new BadRequestException('No transaction found!')
+                throw new NotFoundException('No transaction found!')
             }
             const isTypeCredit = transaction.type === 'Credit'
             await txn.accounts.update({

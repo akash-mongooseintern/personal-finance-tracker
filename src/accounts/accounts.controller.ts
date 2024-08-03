@@ -59,13 +59,10 @@ export class AccountsController extends BaseController {
         @Req() req: AuthenticatedRequest,
         @Param('account_id', ParseIntPipe) accountId: number,
         @Body() updateAccountDto: UpdateAccountsDto
-    ): Promise<Accounts | undefined> {
+    ): Promise<SuccessResponseDto<{status: string}>> {
         const ctx = this.getContext(req)
-        try{
-            return await this.accountsService.updatePartialAccount(accountId, updateAccountDto, ctx.user.id)
-        }catch(err){
-            return;
-        }
+        const result = await this.accountsService.updatePartialAccount(accountId, updateAccountDto, ctx.user.id)
+        return new SuccessResponseDto(result)
     }
 
     @Delete(':account_id')

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma";
 import { CreateAccountDto } from "./dto/create-account.dto";
 import { Accounts } from "@prisma/client";
@@ -53,14 +53,24 @@ export class AccountsService {
         return await this.prismaService.accounts.create({ data })
     }
 
-    async updatePartialAccount(accountId: number, updateAccountDto: UpdateAccountsDto, userId: string): Promise<Accounts> {
-        return await this.prismaService.accounts.update({
+    async updatePartialAccount(accountId: number, updateAccountDto: UpdateAccountsDto, userId: string): Promise<{status: string}> {
+        const account = await this.prismaService.accounts.findUnique({
+            where: {
+                id: accountId,
+                userId
+            }
+        })
+        if(!account) throw new NotFoundException('Account record not found!')
+        await this.prismaService.accounts.update({
             where: {
                 id: accountId,
                 userId
             },
             data: updateAccountDto
         })
+        return {
+            status: "success"
+        }
     }
 
     async deleteAccount(accountId: number, userId: string): Promise<Accounts> {
