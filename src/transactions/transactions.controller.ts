@@ -12,8 +12,8 @@ import { UpdateTransactionDto } from "./dto/update-transaction.dto";
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, AccessGuard)
 @Controller('transactions')
-export class TransactionsController extends BaseController{
-    constructor(private readonly transactionsService: TransactionsService){
+export class TransactionsController extends BaseController {
+    constructor(private readonly transactionsService: TransactionsService) {
         super()
     }
 
@@ -26,29 +26,29 @@ export class TransactionsController extends BaseController{
         @Query() query: GetTransactionsDto
     ): Promise<Transaction[]> {
         const ctx = this.getContext(req)
-        try{
+        try {
             return await this.transactionsService.getTransactions({
                 accountId: query.account_id,
                 type: query.type,
                 category: query.category
             }, ctx.user.id)
-        }catch(err){
+        } catch (err) {
             throw new BadRequestException(err.message)
         }
     }
-    
+
     @Get(':transaction_id')
     @ApiOkResponse({
         type: Promise<SuccessResponseDto<Transaction | null>>
     })
     async getTransactionsById(
         @Req() req: AuthenticatedRequest,
-        @Param('transaction_id',ParseIntPipe) txnId: number
+        @Param('transaction_id', ParseIntPipe) txnId: number
     ): Promise<SuccessResponseDto<Transaction | null>> {
         const ctx = this.getContext(req)
-        try{
+        try {
             return new SuccessResponseDto(await this.transactionsService.getTransactionsById(txnId, ctx.user.id))
-        }catch(err){
+        } catch (err) {
             throw new BadRequestException(err.message)
         }
     }
@@ -64,9 +64,9 @@ export class TransactionsController extends BaseController{
         @Req() req: AuthenticatedRequest
     ): Promise<any> {
         const ctx = this.getContext(req)
-        try{
+        try {
             return new SuccessResponseDto(await this.transactionsService.getTotalAmountByCategory(ctx.user.id))
-        }catch(err){
+        } catch (err) {
             throw new BadRequestException(err.message)
         }
     }
@@ -77,60 +77,56 @@ export class TransactionsController extends BaseController{
     })
     async getMyExpenses(
         @Req() req: AuthenticatedRequest
-    ) : Promise<SuccessResponseDto<{ totalExpense: string }>>{
+    ): Promise<SuccessResponseDto<{ totalExpense: string }>> {
         const ctx = this.getContext(req)
-        try{
+        try {
             return new SuccessResponseDto(await this.transactionsService.getMyExpenses(ctx.user.id))
-        }catch(err){
+        } catch (err) {
             throw new BadRequestException(err.message)
         }
     }
 
     @Post()
     @ApiCreatedResponse({
-        type : Promise<Transaction>
+        type: Promise<Transaction>
     })
     async createTransaction(
         @Req() req: AuthenticatedRequest,
         @Body() createTransactionDto: CreateTransactionsDto
-    ) : Promise<{ status: string; }> {
+    ): Promise<{ status: string; }> {
         const ctx = this.getContext(req)
-        try{
+        try {
             return await this.transactionsService.createTransaction(createTransactionDto, ctx.user.id)
-        }catch(err){
+        } catch (err) {
             throw new BadRequestException('Something went wrong!')
         }
     }
-    
+
     @Put(':transaction_id')
     @ApiCreatedResponse({
-        type : Promise<Transaction>
+        type: Promise<Transaction>
     })
     async updateTransaction(
         @Req() req: AuthenticatedRequest,
         @Body() updateTransactionDto: UpdateTransactionDto,
         @Param('transaction_id', ParseIntPipe) transactionId: number
-    ) : Promise<{ status: string; }> {
+    ): Promise<{ status: string; }> {
         const ctx = this.getContext(req)
-        try{
-            return await this.transactionsService.updateTransaction(
-                transactionId, 
-                updateTransactionDto, 
-                ctx.user.id
-            )
-        }catch(err){
-            throw new BadRequestException('Something went wrong!')
-        }
+        return await this.transactionsService.updateTransaction(
+            transactionId,
+            updateTransactionDto,
+            ctx.user.id
+        )
     }
 
     @Delete(':transaction_id')
     @ApiOkResponse({
-        type: Promise<{status: string}>
+        type: Promise<{ status: string }>
     })
     async deleteTransactions(
         @Req() req: AuthenticatedRequest,
-        @Param('transaction_id',ParseIntPipe) txnId: number
-    ): Promise<{status: string}>{
+        @Param('transaction_id', ParseIntPipe) txnId: number
+    ): Promise<{ status: string }> {
         const ctx = this.getContext(req)
         return await this.transactionsService.deleteTransaction(txnId, req.user.id)
     }

@@ -20,10 +20,10 @@ export class CreateTransactionsDto {
     @ApiPropertyOptional()
     @IsNumber()
     @IsOptional()
-    creditToAccountId: number | undefined;
+    creditToAccountId?: number | null;
 
     @ApiPropertyOptional()
     @IsNumber()
     @IsOptional()
-    debitFromAccountId: number | undefined;
+    debitFromAccountId?: number | null;
 }

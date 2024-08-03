@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma";
 import { CreateTransactionsDto } from "./dto/create-transaction.dto";
-import { GetTransactionsDto } from "./dto/get-transaction.dto";
 import { Transaction, TransactionCategory, TransactionType } from "@prisma/client";
 import { UpdateTransactionDto } from "./dto/update-transaction.dto";
 
@@ -99,20 +98,36 @@ export class TransactionsService {
         createTransactionDto: CreateTransactionsDto,
         userId: string): Promise<{ status: string; }> {
         return await this.prismaService.$transaction(async (txn) => {
+
+            const isTypeCredit = createTransactionDto.type === 'Credit'
+
+            if(isTypeCredit){
+                createTransactionDto.debitFromAccountId = null
+                const isCategoryIncome = createTransactionDto.category === 'Income'
+                if(!isCategoryIncome){
+                    throw new BadRequestException('Provide category Income for transaction type Credit')
+                }
+            }else{
+                createTransactionDto.creditToAccountId = null
+            }
+
+            const isValidData = isTypeCredit ? !!createTransactionDto.creditToAccountId : !!createTransactionDto.debitFromAccountId
+            
+            if(!isValidData) throw new BadRequestException('Please provide "creditToAccountId" for type "Credit" and "debitFromAccountId" for type "Debit"')
+
             await txn.transaction.create({
                 data: {
                     ...createTransactionDto,
                     userId
                 }
             })
-            const isCredit = createTransactionDto.type === 'Credit'
             await txn.accounts.update({
                 where: {
-                    id: isCredit ? createTransactionDto.creditToAccountId : createTransactionDto.debitFromAccountId
+                    id: isTypeCredit ? createTransactionDto.creditToAccountId as number : createTransactionDto.debitFromAccountId as number
                 },
                 data: {
                     amount: {
-                        [isCredit ? 'increment' : 'decrement']: createTransactionDto.amount
+                        [isTypeCredit ? 'increment' : 'decrement']: createTransactionDto.amount
                     }
                 }
             })
@@ -126,7 +141,15 @@ export class TransactionsService {
         transactionId: number,
         updateTransactionDto: UpdateTransactionDto,
         userId: string): Promise<{ status: string; }> {
+
         return await this.prismaService.$transaction(async (txn) => {
+            
+            if(updateTransactionDto.type){
+                const isValidData = updateTransactionDto.type === 'Credit' ? !!updateTransactionDto.creditToAccountId : !!updateTransactionDto.debitFromAccountId
+                if(!isValidData) throw new BadRequestException('Please provide creditToAccountId for type Credit and debitFromAccountId for type Debit')
+            }
+
+            //fetch previous transaction
             const transaction = await txn.transaction.findUnique({
                 where: {
                     id: transactionId,
@@ -136,42 +159,60 @@ export class TransactionsService {
 
             if (!transaction) throw new BadRequestException('Transaction not found!')
 
-            const isCredit = transaction.type === 'Credit'
+            const isTypeCredit = transaction.type === 'Credit'
+            const accId = isTypeCredit ? transaction.creditToAccountId as number : transaction.debitFromAccountId as number
+            const change = !isTypeCredit ? 'increment' : 'decrement'
 
-            await txn.accounts.update({
-                where: {
-                    id: isCredit ? transaction.creditToAccountId as number : transaction.debitFromAccountId as number
-                },
-                data: {
-                    amount: {
-                        [!isCredit ? 'increment' : 'decrement']: transaction.amount
-                    }
-                }
-            })
-
-            await txn.transaction.update({
-                where: {
-                    id: transactionId
-                },
-                data: updateTransactionDto
-            })
-            
-            let accId = (transaction.creditToAccountId || transaction.debitFromAccountId) as number
-            if(updateTransactionDto.creditToAccountId || updateTransactionDto.debitFromAccountId){
-                accId = (updateTransactionDto.creditToAccountId || updateTransactionDto.debitFromAccountId) as number
-            }
-            const isCreditUpdate = updateTransactionDto.type ? updateTransactionDto.type === 'Credit' : transaction.type === 'Credit'
-
+            //reverse account data based on previous transaction details
             await txn.accounts.update({
                 where: {
                     id: accId
                 },
                 data: {
                     amount: {
-                        [isCreditUpdate ? 'increment' : 'decrement']: transaction.amount
+                        [change]: transaction.amount
                     }
                 }
             })
+            const isNewTypeCredit : boolean = updateTransactionDto.type ? updateTransactionDto.type === 'Credit' : transaction.type === 'Credit'
+            if(isNewTypeCredit){
+                updateTransactionDto.debitFromAccountId = null
+                const isCategoryIncome = updateTransactionDto.category ? updateTransactionDto.category === 'Income' : transaction.category === 'Income'
+                if(!isCategoryIncome){
+                    throw new BadRequestException('Provide category Income for transaction type Credit')
+                }
+            }else{
+                updateTransactionDto.creditToAccountId = null
+            }
+            console.log({
+                updateTransactionDto
+            })
+            //update transaction with new values
+            await txn.transaction.update({
+                where: {
+                    id: transactionId
+                },
+                data: updateTransactionDto
+            })
+
+            const newAccountId = updateTransactionDto.creditToAccountId ?? updateTransactionDto.debitFromAccountId ?? transaction.creditToAccountId ?? transaction.debitFromAccountId
+            const newAmount = updateTransactionDto.amount ?? transaction.amount
+            
+            if(newAccountId && !isNaN(newAccountId)){
+                // update account with new transaction values
+                 await txn.accounts.update({
+                    where: {
+                        id: newAccountId
+                    },
+                    data: {
+                        amount: {
+                            [isNewTypeCredit ? 'increment' : 'decrement']: newAmount
+                        }
+                    }
+                })
+            }else{
+                throw new BadRequestException('Account id argument is null or undefined')
+            }
 
             return {
                 status: 'successful!'
@@ -193,15 +234,15 @@ export class TransactionsService {
             if (!transaction) {
                 throw new BadRequestException('No transaction found!')
             }
-            const isCreditTxn = transaction.type === 'Credit'
+            const isTypeCredit = transaction.type === 'Credit'
             await txn.accounts.update({
                 where: {
-                    id: isCreditTxn ? transaction.creditToAccountId as number : transaction.debitFromAccountId as number,
+                    id: isTypeCredit ? transaction.creditToAccountId as number : transaction.debitFromAccountId as number,
                     userId
                 },
                 data: {
                     amount: {
-                        [!isCreditTxn ? 'increment' : 'decrement']: transaction.amount
+                        [!isTypeCredit ? 'increment' : 'decrement']: transaction.amount
                     }
                 }
             })
