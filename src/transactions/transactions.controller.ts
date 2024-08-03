@@ -37,6 +37,40 @@ export class TransactionsController extends BaseController {
         }
     }
 
+    @Get('amount-by-category')
+    @ApiOkResponse({
+        type: Promise<SuccessResponseDto<{
+            amounts: number,
+            category: string
+        }[]>>
+    })
+    async getTotalAmountByCategory(
+        @Req() req: AuthenticatedRequest
+    ): Promise<SuccessResponseDto<{amount: number, category: string}[]>> {
+        const ctx = this.getContext(req)
+        try {
+            return new SuccessResponseDto(await this.transactionsService.getTotalAmountByCategory(ctx.user.id))
+        } catch (err) {
+            throw new BadRequestException(err.message)
+        }
+    }
+
+    @Get('expense')
+    @ApiOkResponse({
+        type: Promise<SuccessResponseDto<{ totalExpense: number }>>
+    })
+    async getMyExpenses(
+        @Req() req: AuthenticatedRequest
+    ): Promise<SuccessResponseDto<{ totalExpense: number }>> {
+        console.log('Api is Called')
+        const ctx = this.getContext(req)
+        try {
+            return new SuccessResponseDto(await this.transactionsService.getMyExpenses(ctx.user.id))
+        } catch (err) {
+            throw new BadRequestException(err.message)
+        }
+    }
+
     @Get(':transaction_id')
     @ApiOkResponse({
         type: Promise<SuccessResponseDto<Transaction | null>>
@@ -48,39 +82,6 @@ export class TransactionsController extends BaseController {
         const ctx = this.getContext(req)
         try {
             return new SuccessResponseDto(await this.transactionsService.getTransactionsById(txnId, ctx.user.id))
-        } catch (err) {
-            throw new BadRequestException(err.message)
-        }
-    }
-
-    @Get('amount-by-category')
-    @ApiOkResponse({
-        type: Promise<SuccessResponseDto<{
-            amounts: number,
-            category: string
-        }[]>>
-    })
-    async getTotalAmountByCategory(
-        @Req() req: AuthenticatedRequest
-    ): Promise<any> {
-        const ctx = this.getContext(req)
-        try {
-            return new SuccessResponseDto(await this.transactionsService.getTotalAmountByCategory(ctx.user.id))
-        } catch (err) {
-            throw new BadRequestException(err.message)
-        }
-    }
-
-    @Get('expense')
-    @ApiOkResponse({
-        type: Promise<any>
-    })
-    async getMyExpenses(
-        @Req() req: AuthenticatedRequest
-    ): Promise<SuccessResponseDto<{ totalExpense: string }>> {
-        const ctx = this.getContext(req)
-        try {
-            return new SuccessResponseDto(await this.transactionsService.getMyExpenses(ctx.user.id))
         } catch (err) {
             throw new BadRequestException(err.message)
         }

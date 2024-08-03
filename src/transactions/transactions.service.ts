@@ -61,7 +61,7 @@ export class TransactionsService {
         })
     }
 
-    async getTotalAmountByCategory(userId: string): Promise<any> {
+    async getTotalAmountByCategory(userId: string): Promise<{ amount: number, category: string}[]> {
         const result = await this.prismaService.transaction.groupBy({
             by: 'category',
             _sum: {
@@ -72,12 +72,12 @@ export class TransactionsService {
             }
         })
         return result.map(item => ({
-            amount: item._sum.amount,
+            amount: item._sum.amount as unknown as number,
             category: item.category
         }))
     }
 
-    async getMyExpenses(userId: string): Promise<{ totalExpense: string }> {
+    async getMyExpenses(userId: string): Promise<{ totalExpense: number }> {
         const result = await this.prismaService.transaction.aggregate({
             _sum: {
                 amount: true
@@ -89,10 +89,9 @@ export class TransactionsService {
         })
 
         return {
-            totalExpense: `${result._sum.amount}`
+            totalExpense: result._sum.amount as unknown as number
         }
     }
-
 
     async createTransaction(
         createTransactionDto: CreateTransactionsDto,
