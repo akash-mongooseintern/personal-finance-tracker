@@ -62,7 +62,6 @@ export class TransactionsController extends BaseController {
     async getMyExpenses(
         @Req() req: AuthenticatedRequest
     ): Promise<SuccessResponseDto<{ totalExpense: number }>> {
-        console.log('Api is Called')
         const ctx = this.getContext(req)
         try {
             return new SuccessResponseDto(await this.transactionsService.getMyExpenses(ctx.user.id))
@@ -96,11 +95,7 @@ export class TransactionsController extends BaseController {
         @Body() createTransactionDto: CreateTransactionsDto
     ): Promise<{ status: string; }> {
         const ctx = this.getContext(req)
-        try {
-            return await this.transactionsService.createTransaction(createTransactionDto, ctx.user.id)
-        } catch (err) {
-            throw new BadRequestException('Something went wrong!')
-        }
+        return await this.transactionsService.createTransaction(createTransactionDto, ctx.user.id)
     }
 
     @Put(':transaction_id')

@@ -1,8 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma";
 import { CreateAccountDto } from "./dto/create-account.dto";
 import { Accounts } from "@prisma/client";
 import { UpdateAccountsDto } from "./dto/update-account.dto";
+import { API_RESPONSE_VALUE } from "src/app.constant";
+import { ACCOUNT_ERROR } from "./accounts.constant";
 
 @Injectable()
 export class AccountsService {
@@ -60,7 +62,7 @@ export class AccountsService {
                 userId
             }
         })
-        if(!account) throw new NotFoundException('Account record not found!')
+        if(!account) throw new NotFoundException(ACCOUNT_ERROR.ACCOUNT_NOT_FOUND)
         await this.prismaService.accounts.update({
             where: {
                 id: accountId,
@@ -69,7 +71,7 @@ export class AccountsService {
             data: updateAccountDto
         })
         return {
-            status: "success"
+            status: API_RESPONSE_VALUE.SUCCESS
         }
     }
 
